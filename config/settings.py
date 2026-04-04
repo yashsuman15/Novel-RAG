@@ -1,34 +1,31 @@
 """Configuration factory and settings management."""
 
 import os
-from typing import Union, Optional
+
 from config.base import BaseConfig
 from config.development import DevelopmentConfig
+
 # from config.production import ProductionConfig
 # from config.testing import TestingConfig
 from exceptions import ConfigurationError
 
-
-ConfigType = Union[DevelopmentConfig, 
-                    # ProductionConfig, 
-                    # TestingConfig, 
-                    BaseConfig]
+ConfigType = DevelopmentConfig | BaseConfig
 
 
 def get_config() -> ConfigType:
     """
     Load configuration based on ENVIRONMENT variable.
-    
+
     Environment variable priority:
     1. ENVIRONMENT (e.g., "production", "development")
     2. Default to "development"
-    
+
     Returns:
         Configuration instance for current environment
-        
+
     Raises:
         ConfigurationError: If ENVIRONMENT is invalid
-        
+
     Example:
         >>> import os
         >>> os.environ["ENVIRONMENT"] = "production"
@@ -37,7 +34,7 @@ def get_config() -> ConfigType:
         production
     """
     env = os.getenv("ENVIRONMENT", "development").lower()
-    
+
     config_map = {
         "development": DevelopmentConfig,
         "dev": DevelopmentConfig,
@@ -48,38 +45,36 @@ def get_config() -> ConfigType:
         # "testing": TestingConfig,
         # "test": TestingConfig,
     }
-    
+
     config_class = config_map.get(env)
     if not config_class:
         raise ConfigurationError(
-            f"Invalid ENVIRONMENT: '{env}'. "
-            f"Must be one of: {list(set(config_map.keys()))}",
-            details={"environment": env, "valid_options": list(set(config_map.keys()))}
+            f"Invalid ENVIRONMENT: '{env}'. " f"Must be one of: {list(set(config_map.keys()))}",
+            details={"environment": env, "valid_options": list(set(config_map.keys()))},
         )
-    
+
     try:
         return config_class()
     except Exception as e:
         raise ConfigurationError(
-            f"Failed to load {env} configuration",
-            details={"environment": env, "error": str(e)}
+            f"Failed to load {env} configuration", details={"environment": env, "error": str(e)}
         ) from e
 
 
 # Singleton instance
-_config: Optional[ConfigType] = None
+_config: ConfigType | None = None
 
 
 def get_settings() -> ConfigType:
     """
     Get or create settings singleton.
-    
+
     The configuration is cached after first load for performance.
     Use reload_settings() to force reload.
-    
+
     Returns:
         Cached configuration instance
-        
+
     Example:
         >>> settings = get_settings()
         >>> print(settings.chunk_size)
@@ -94,12 +89,12 @@ def get_settings() -> ConfigType:
 def reload_settings() -> ConfigType:
     """
     Force reload settings (useful for tests).
-    
+
     Clears the cached configuration and loads fresh from environment.
-    
+
     Returns:
         Freshly loaded configuration instance
-        
+
     Example:
         >>> import os
         >>> os.environ["ENVIRONMENT"] = "testing"

@@ -1,6 +1,6 @@
 """Validation schemas for RAG application."""
 
-from schemas.validation import QueryRequest, QueryResponse, DocumentIngestRequest
+from schemas.validation import DocumentIngestRequest, QueryRequest, QueryResponse
 
 __all__ = [
     "QueryRequest",

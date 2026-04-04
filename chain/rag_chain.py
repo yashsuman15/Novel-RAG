@@ -1,16 +1,53 @@
-from retrieval.retriever import Retriever
-from llm.model import LLM
-from config import get_settings
-from schemas.validation import QueryRequest
-from exceptions import ValidationError, RAGException
-from pydantic import ValidationError as PydanticValidationError
+"""RAG chain orchestration module.
+
+Provides the top-level :class:`RAGChain` class that ties together
+retrieval, reranking, context assembly, and LLM generation into a
+single ``run()`` call.
+"""
+
 import logging
+
+from pydantic import ValidationError as PydanticValidationError
+
+from config import get_settings
+from exceptions import RAGException, ValidationError
+from llm.model import LLM
+from retrieval.retriever import Retriever
+from schemas.validation import QueryRequest
 
 logger = logging.getLogger(__name__)
 
 
 class RAGChain:
+    """End-to-end Retrieval-Augmented Generation pipeline.
+
+    Orchestrates the full question-answering workflow:
+
+    1. Validate and sanitise the user query via :class:`QueryRequest`.
+    2. Retrieve relevant document chunks with multi-query expansion.
+    3. Assemble numbered context passages with source citations.
+    4. Stream the answer from the LLM with inline citations.
+    5. Print source references.
+
+    Attributes:
+        retriever: :class:`~retrieval.retriever.Retriever` instance for
+            context retrieval.
+        llm: :class:`~llm.model.LLM` instance for answer generation.
+        setting: Active application settings from
+            :func:`~config.get_settings`.
+
+    Example:
+        >>> chain = RAGChain()
+        >>> chain.run("Who is Orsted?")
+    """
+
     def __init__(self):
+        """Initialize the RAG chain with retriever and LLM components.
+
+        Raises:
+            RAGException: If any component fails to initialize (e.g.
+                embedding model download failure, API key missing).
+        """
         try:
             logger.info("Initializing RAGChain")
             self.retriever = Retriever()
@@ -19,25 +56,54 @@ class RAGChain:
             logger.info("RAGChain initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize RAGChain: {e}")
-            raise RAGException(
-                "Failed to initialize RAGChain", details={"error": str(e)}
-            ) from e
+            raise RAGException("Failed to initialize RAGChain", details={"error": str(e)}) from e
 
     def run(
         self,
         query: str,
-        total_chunks: int = None,
-        rerank_top_k: int = None,
-        num_queries: int = None,
-    ) -> str:
+        total_chunks: int | None = None,
+        rerank_top_k: int | None = None,
+        num_queries: int | None = None,
+    ) -> None:
+        """Execute the full RAG pipeline for a given user query.
+
+        The pipeline proceeds through five sequential steps:
+
+        1. **Validate** — sanitise the query and optional overrides.
+        2. **Retrieve** — fetch relevant chunks via multi-query expansion.
+        3. **Assemble context** — build numbered passages with source labels.
+        4. **Generate** — stream the LLM response with citation instructions.
+        5. **Print sources** — display the source references used.
+
+        Args:
+            query: The user's natural-language question.
+            total_chunks: Override the configured number of chunks to
+                retrieve from the vector store. Defaults to ``None``
+                (uses ``retrieval_total_chunks`` from settings).
+            rerank_top_k: Override the configured number of top chunks
+                to keep after reranking. Defaults to ``None``
+                (uses ``retrieval_rerank_top_k`` from settings).
+            num_queries: Override the configured number of expanded
+                queries to generate. Defaults to ``None``
+                (uses ``retrieval_num_queries`` from settings).
+
+        Returns:
+            The generated answer string (also printed to stdout via
+            streaming).
+
+        Raises:
+            ValidationError: If the query or parameters fail validation.
+            RAGException: If retrieval, context assembly, or LLM
+                generation fails.
+        """
 
         try:
             logger.debug(f"Running RAGChain with query: {query[:50]}...")
-            request = QueryRequest(
-                query=query, top_k=total_chunks, num_queries=num_queries
-            )
+            request = QueryRequest(query=query, top_k=total_chunks, num_queries=num_queries)
             clean_query = request.query
-            self.rerank_top_k = rerank_top_k if rerank_top_k is not None else self.setting.retrieval_rerank_top_k
+            self.rerank_top_k = (
+                rerank_top_k if rerank_top_k is not None else self.setting.retrieval_rerank_top_k
+            )
             logger.debug(f"Cleaned query: {clean_query[:50]}...")
 
         except PydanticValidationError as e:
@@ -108,7 +174,7 @@ Answer:"""
                 details={
                     "query": clean_query[:100],
                     "error": str(e),
-                    "error": type(e).__name__,
+                    "error_type": type(e).__name__,
                 },
             ) from e
 

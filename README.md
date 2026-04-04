@@ -20,7 +20,7 @@ A modular RAG pipeline built with Python, LangChain, ChromaDB, and Anthropic Cla
 
 ## 🏗️ Project Structure
 
-```
+```text
 rag_book/
 ├── data/
 │   ├── raw/                          # Source PDFs (supports nested subdirectories)
@@ -60,7 +60,7 @@ rag_book/
 
 ### Pipeline Architecture
 
-```
+```text
                         ┌──────────────────────────────────┐
                         │         INGESTION (one-time)      │
                         │                                    │
@@ -149,7 +149,7 @@ uv run python -m chain.rag_chain
 
 ### Example Session
 
-```
+```text
 Ask me anything about the story!
 You: Who is Orsted?
 
