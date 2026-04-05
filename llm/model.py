@@ -190,7 +190,7 @@ class LLM_lite:
         try:
             logger.debug("Generating response for prompt")
             response = self.model.invoke(messages)
-            logger.debug("Response generated successfully")
+            logger.debug("\nResponse generated successfully")
             return str(response.content)
         except TimeoutError as e:
             logger.error(f"LLM Lite request timeed out after {self.timeout} seconds")

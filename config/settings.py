@@ -4,12 +4,11 @@ import os
 
 from config.base import BaseConfig
 from config.development import DevelopmentConfig
-
-# from config.production import ProductionConfig
-# from config.testing import TestingConfig
+from config.production import ProductionConfig
+from config.testing import TestingConfig
 from exceptions import ConfigurationError
 
-ConfigType = DevelopmentConfig | BaseConfig
+ConfigType = DevelopmentConfig | ProductionConfig | TestingConfig | BaseConfig
 
 
 def get_config() -> ConfigType:
@@ -38,23 +37,34 @@ def get_config() -> ConfigType:
     config_map = {
         "development": DevelopmentConfig,
         "dev": DevelopmentConfig,
-        # "production": ProductionConfig,
-        # "prod": ProductionConfig,
-        # "staging": ProductionConfig,  # Use production config for staging
-        # "stage": ProductionConfig,
-        # "testing": TestingConfig,
-        # "test": TestingConfig,
+        "production": ProductionConfig,
+        "prod": ProductionConfig,
+        "staging": ProductionConfig,  # Use production config for staging
+        "stage": ProductionConfig,
+        "testing": TestingConfig,
+        "test": TestingConfig,
     }
 
     config_class = config_map.get(env)
     if not config_class:
         raise ConfigurationError(
-            f"Invalid ENVIRONMENT: '{env}'. " f"Must be one of: {list(set(config_map.keys()))}",
+            f"Invalid ENVIRONMENT: '{env}'. Must be one of: {list(set(config_map.keys()))}",
             details={"environment": env, "valid_options": list(set(config_map.keys()))},
         )
 
+    # Normalize aliases to canonical environment names
+    # so the Literal field on each config class validates correctly
+    canonical_map = {
+        "dev": "development",
+        "prod": "production",
+        "staging": "production",  # staging uses ProductionConfig
+        "stage": "production",
+        "test": "testing",
+    }
+    canonical_env = canonical_map.get(env, env)
+
     try:
-        return config_class()
+        return config_class(environment=canonical_env)
     except Exception as e:
         raise ConfigurationError(
             f"Failed to load {env} configuration", details={"environment": env, "error": str(e)}

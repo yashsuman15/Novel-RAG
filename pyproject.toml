@@ -30,6 +30,8 @@ dev = [
     "bandit>=1.8.0",         # Security linter
     "safety>=3.4.0",         # Dependency vulnerability scanner
     "detect-secrets>=1.5.0", # Secret detection
+    "pytest>=8.0.0",         # Testing framework
+    "pytest-cov>=4.1.0",     # Coverage plugin
 ]
 
 [tool.bandit]

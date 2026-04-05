@@ -16,7 +16,7 @@ class DevelopmentConfig(BaseConfig):
     - Less aggressive retrieval
     """
 
-    environment: Literal["development"] = "development"  # type: ignore[assignment]
+    environment: Literal["development"] = "development"
 
     # More verbose logging for development
     log_level: str = "DEBUG"

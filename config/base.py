@@ -32,7 +32,9 @@ class BaseConfig(BaseSettings):
 
     environment: Literal[
         "development",
-        # "staging", "production"
+        "production",
+        "staging",
+        "testing",
     ] = Field(default="development", description="Runtime environment")
 
     # =========================================================================

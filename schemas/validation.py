@@ -12,7 +12,7 @@ Schemas:
 
 import re
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class QueryRequest(BaseModel):
@@ -80,8 +80,9 @@ class QueryRequest(BaseModel):
 
         return v
 
-    class Config:
-        json_schema_extra = {"example": {"query": "Who is Orsted?", "top_k": 10, "num_queries": 5}}
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"query": "Who is Orsted?", "top_k": 10, "num_queries": 5}}
+    )
 
 
 class SourceInfo(BaseModel):
@@ -117,19 +118,24 @@ class QueryResponse(BaseModel):
         metadata: Operational metadata dict (latency_ms, model, etc.).
     """
 
+    query: str = Field(..., description="Original user query")
+
     answer: str = Field(..., description="Generated answer")
 
     sources: list[SourceInfo] = Field(
         default_factory=list, description="Source documents with citations"
     )
 
+    thinking: str | None = Field(default=None, description="LLM thinking/reasoning trace")
+
     metadata: dict = Field(
         default_factory=dict, description="Additional metadata (latency, model used, etc.)"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
+                "query": "Who is Orsted?",
                 "answer": "Orsted is the Dragon God, a powerful figure...",
                 "sources": [
                     {
@@ -139,6 +145,7 @@ class QueryResponse(BaseModel):
                         "content": "Orsted stood before them...",
                     }
                 ],
+                "thinking": "Analyzing the query about Orsted...",
                 "metadata": {
                     "latency_ms": 1250,
                     "model": "claude-opus-4-5",
@@ -147,6 +154,7 @@ class QueryResponse(BaseModel):
                 },
             }
         }
+    )
 
 
 class DocumentIngestRequest(BaseModel):
@@ -191,11 +199,12 @@ class DocumentIngestRequest(BaseModel):
 
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "file_path": "data/raw/new_document.pdf",
                 "chunk_size": 1000,
                 "chunk_overlap": 300,
             }
         }
+    )

@@ -1,5 +1,11 @@
 """Entry point for the RAG Book application."""
 
+from utils.logger import get_logger, setup_logging
+
+# Initialize logging system
+setup_logging()
+logger = get_logger(__name__)
+
 
 def main():
     """Run the RAG Book application.
@@ -7,7 +13,7 @@ def main():
     This is the primary entry point that bootstraps and starts
     the RAG pipeline. Currently prints a startup message.
     """
-    print("Hello from rag-basic!")
+    logger.info("RAG Book application starting...")
 
 
 if __name__ == "__main__":
